@@ -1,0 +1,243 @@
+#!/usr/bin/env python3
+
+import numpy as np
+import sounddevice as sd
+import curses
+
+
+def audio_callback(indata, frames, time, status):
+    if status:
+        print(status, flush=True)
+    global audio_data
+    audio_data = np.copy(indata[:, 0])
+
+
+def visualize(stdscr):
+    curses.start_color()
+    curses.use_default_colors()
+
+    curses.init_pair(20, 100, -1)  # Yellow for frame
+    curses.init_pair(21, 231, -1)  # White for label 
+    curses.init_pair(22, 245, -1)  # Dark grey
+  
+    # Box characters
+    h_line = '─'
+    v_line = '│'
+    tl_corner = '┌'
+    tr_corner = '┐'
+    bl_corner = '└'
+    br_corner = '┘'
+
+    # Define gradient sets
+    gradient_sets = [
+        [129, 128, 127, 126, 125, 124],  # Magenta
+        [57, 56, 55, 54, 53, 52],        # Dark
+        [159, 158, 157, 156, 155, 154],  # Lime
+        [230, 229, 228, 227, 226],       # Yellow
+        [223, 222, 221, 220],            # Darker Yellow
+        [33, 39, 45, 51, 50, 49],        # Blue shades
+        [196, 202, 208, 214, 220, 226],  # Red to yellow
+        [22, 28, 34, 40, 46],            # Forest green
+        [93, 99, 105, 111, 117, 123],    # Cool purple tones
+        [202, 208, 214, 220]             # Darker yellow
+    ]
+
+    # Define block character sets
+    block_sets = [
+        " ▁▂▃▄▅▆▇█",
+        " ⡀⡄⡆⡇",
+        " ⣠⣤⣶⣿",
+        " ▏▎▍▌▋▊▉█",
+        " ░▒▓█",
+        " ⠀⠁⠃⠇⠏⠟⠿⡿⣿■",
+        " ■"
+    ]
+
+    current_gradient = 0  # Index for gradient selection
+    current_blocks = 0    # Index for block character selection
+    spacing_options = [0, 1, 2, 3]
+    current_spacing = 0
+
+    height, _ = stdscr.getmaxyx()
+    num_colors = min(height, len(gradient_sets[current_gradient]))
+
+    for i in range(num_colors):
+        curses.init_pair(i + 1, gradient_sets[current_gradient][i], -1)
+
+    curses.curs_set(0)
+    stdscr.nodelay(1)
+    stdscr.timeout(50)
+
+    global audio_data
+    samplerate = 44100
+    chunk_size = 1024
+    decay_factor = 0.1
+    rise_factor = 0.3
+    low_freq_threshold = 0.05
+    smoothing_factor = 1
+    min_freq = 1000
+    max_freq = 11000
+
+    with sd.InputStream(callback=audio_callback, channels=1, samplerate=samplerate, blocksize=chunk_size):
+        bar_heights = np.full(200, 1)
+        max_heights = np.zeros(200)
+        smoothed_bars = np.zeros(200)
+
+        while True:
+            stdscr.clear()
+            height, width = stdscr.getmaxyx()
+            # Draw outer border box
+            for x in range(1, width - 1):
+                try:
+                    stdscr.addch(0, x, h_line, curses.color_pair(20))
+                    stdscr.addch(height - 1, x, h_line, curses.color_pair(20))
+                except curses.error:
+                    pass
+            for y in range(1, height - 1):
+                try:
+                    stdscr.addch(y, 0, v_line, curses.color_pair(20))
+                    stdscr.addch(y, width - 1, v_line, curses.color_pair(20))
+                except curses.error:
+                    pass
+            try:
+                stdscr.addch(0, 0, tl_corner, curses.color_pair(20))
+                stdscr.addch(0, width - 1, tr_corner, curses.color_pair(20))
+
+                # Draw top labels
+                top_labels = [f"┤quit├", f"┤spacing├"]
+                spacing_top = width // (len(top_labels) + 1)
+                for idx, label in enumerate(top_labels):
+                    start_x = spacing_top * (idx + 1) - len(label) // 2
+                    for i, ch in enumerate(label):
+                        if 0 < start_x + i < width - 1:
+                            if ch in ['┤', '├']:
+                                color = curses.color_pair(20)
+                            elif ch in ['q', 's'] or ch.isdigit():
+                                color = curses.color_pair(22)
+                            else:
+                                color = curses.color_pair(21)
+                            stdscr.addch(0, start_x + i, ch, color)
+                stdscr.addch(height - 1, 0, bl_corner, curses.color_pair(20))
+                stdscr.addch(height - 1, width - 1, br_corner, curses.color_pair(20))
+            except curses.error:
+                pass
+
+            # Draw evenly spaced labels on the bottom border
+            labels = [
+                f"┤< color >├",
+                f"┤↑ style ↓├"
+            ]
+
+            spacing = width // (len(labels) + 1)
+            for idx, label in enumerate(labels):
+                start_x = spacing * (idx + 1) - len(label) // 2
+                for i, ch in enumerate(label):
+                    if 0 < start_x + i < width - 1:
+                        if ch in ['┤', '├']:
+                            color = curses.color_pair(20)
+                        elif ch in ['<', '>', '↑', '↓', 'q']:
+                            color = curses.color_pair(22)
+                        else:
+                            color = curses.color_pair(21)
+                        stdscr.addch(height - 1, start_x + i, ch, color)
+
+
+            height, width = stdscr.getmaxyx()
+            block_chars = block_sets[current_blocks]
+            max_blocks = len(block_chars) - 1
+
+            # Inner drawing box boundaries
+            inner_top = 1
+            inner_bottom = height - 2
+            inner_left = 1
+            inner_right = width - 2
+
+            bar_spacing = spacing_options[current_spacing]
+            num_bars = max(1, (inner_right - inner_left + 1) // (bar_spacing + 1))
+            if len(bar_heights) != num_bars:
+                bar_heights = np.full(num_bars, 1)
+                max_heights = np.zeros(num_bars)
+                smoothed_bars = np.zeros(num_bars)
+            else:
+                bar_heights = bar_heights[:num_bars]
+                max_heights = max_heights[:num_bars]
+                smoothed_bars = smoothed_bars[:num_bars]
+
+            if len(audio_data) == 0:
+                continue
+
+            fft_data = np.abs(np.fft.rfft(audio_data))
+            freqs = np.fft.rfftfreq(len(audio_data), d=1/samplerate)
+
+            valid_indices = np.where((freqs >= min_freq) & (freqs <= max_freq))
+            freqs = freqs[valid_indices]
+            fft_data = fft_data[valid_indices]
+
+            log_freqs = np.logspace(np.log10(min_freq), np.log10(max_freq), num=num_bars)
+            fft_interpolated = np.interp(log_freqs, freqs, fft_data)
+
+            for i, freq in enumerate(log_freqs):
+                if freq < min_freq and fft_interpolated[i] < low_freq_threshold:
+                    fft_interpolated[i] = 0
+
+            sensitivity_curve = np.interp(log_freqs, [min_freq, max_freq], [0.5, 2.0])
+            fft_interpolated *= sensitivity_curve
+
+            fft_data = np.log1p(fft_interpolated)
+            normalized_bars = np.interp(fft_data, (fft_data.min(), fft_data.max()), (1, height * max_blocks))
+
+            smoothed_bars = (1 - smoothing_factor) * smoothed_bars + smoothing_factor * normalized_bars
+
+            for i in range(num_bars):
+                if smoothed_bars[i] > bar_heights[i]:
+                    bar_heights[i] += rise_factor * (smoothed_bars[i] - bar_heights[i])
+                    max_heights[i] = bar_heights[i]
+                else:
+                    bar_heights[i] -= decay_factor * (bar_heights[i] - smoothed_bars[i])
+
+                num_chars = int(bar_heights[i] / max_blocks)
+                remainder = int(bar_heights[i] % max_blocks)
+                x_position = inner_left + min(i * (bar_spacing + 1), inner_right - inner_left)
+
+                for j in range(num_chars):
+                    y = max(inner_top, inner_bottom - j)
+                    color_index = min(int((j / height) * num_colors), num_colors - 1) + 1
+                    try:
+                        stdscr.addch(y, x_position, block_chars[-1], curses.color_pair(color_index))
+                    except curses.error:
+                        pass
+
+                if remainder > 0:
+                    y_position = max(inner_top, inner_bottom - num_chars)
+                    color_index = min(int((num_chars / height) * num_colors), num_colors - 1) + 1
+                    try:
+                        stdscr.addch(y_position, x_position, block_chars[remainder], curses.color_pair(color_index))
+                    except curses.error:
+                        pass
+
+            # Handle user input for gradient, character set, and spacing switching
+            key = stdscr.getch()
+            if key == curses.KEY_LEFT:
+                current_gradient = (current_gradient - 1) % len(gradient_sets)
+            elif key == curses.KEY_RIGHT:
+                current_gradient = (current_gradient + 1) % len(gradient_sets)
+            elif key == curses.KEY_UP:
+                current_blocks = (current_blocks - 1) % len(block_sets)
+            elif key == curses.KEY_DOWN:
+                current_blocks = (current_blocks + 1) % len(block_sets)
+            elif key == ord('s'):
+                current_spacing = (current_spacing + 1) % len(spacing_options)
+
+            # Update gradient colors
+            num_colors = min(height, len(gradient_sets[current_gradient]))
+            for i in range(num_colors):
+                curses.init_pair(i + 1, gradient_sets[current_gradient][i], -1)
+
+            stdscr.refresh()
+            if key == ord('q'):
+                break
+
+
+if __name__ == "__main__":
+    audio_data = np.zeros(1024)
+    curses.wrapper(visualize)
