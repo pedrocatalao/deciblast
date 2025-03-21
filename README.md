@@ -19,3 +19,7 @@ How it looks on a full screen terminal:
 
 I use it in a pane on my Iterm2 layout like this:
 ![preview](docs/cool-term-layout.gif)
+
+On cool-retro-term:
+
+![preview](docs/cool-retro-term-deciblast.gif)
