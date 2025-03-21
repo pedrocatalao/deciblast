@@ -45,6 +45,7 @@ def visualize(stdscr):
     # Define block character sets
     block_sets = [
         " ▁▂▃▄▅▆▇█",
+        " ▁▂▃▄▅▆▇",
         " ⡀⡄⡆⡇",
         " ⣠⣤⣶⣿",
         " ▏▎▍▌▋▊▉█",
@@ -123,11 +124,7 @@ def visualize(stdscr):
                 pass
 
             # Draw evenly spaced labels on the bottom border
-            labels = [
-                f"┤< color >├",
-                f"┤↑ style ↓├"
-            ]
-
+            labels = [f"┤< color >├", f"┤↑ style ↓├"]
             spacing = width // (len(labels) + 1)
             for idx, label in enumerate(labels):
                 start_x = spacing * (idx + 1) - len(label) // 2
@@ -236,7 +233,6 @@ def visualize(stdscr):
             stdscr.refresh()
             if key == ord('q'):
                 break
-
 
 if __name__ == "__main__":
     audio_data = np.zeros(1024)
