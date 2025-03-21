@@ -260,6 +260,50 @@ def visualize(stdscr):
             elif key == ord('l'):
                 show_labels = not show_labels
 
+
+def show_bootup(stdscr):
+    import random
+    curses.start_color()
+    curses.use_default_colors()
+    stdscr.clear()
+    curses.curs_set(0)
+    stdscr.nodelay(0)
+    stdscr.timeout(0)
+
+    gradient = [160, 124, 88, 196]
+    for i, color in enumerate(gradient):
+        curses.init_pair(i + 1, color, -1)
+
+    logo_text = "○⃝ d e c i b l a s t"
+
+    charset = '▖▗▘▝▚▞▛▜▟▙█'
+    height, width = stdscr.getmaxyx()
+    start_y = height // 2
+    start_x = (width - len(logo_text)) // 2
+
+    flat = [(0, x, ch) for x, ch in enumerate(logo_text)]
+    random.shuffle(flat)
+    revealed = set()
+
+    for _ in range(len(flat)):
+        y, x, _ = flat.pop()
+        revealed.add((y, x))
+
+        for rx, real in enumerate(logo_text):
+            color = curses.color_pair((rx) % len(gradient) + 1)
+            if (0, rx) in revealed:
+                stdscr.addch(start_y, start_x + rx, real, color | curses.A_BOLD)
+            else:
+                rand_ch = random.choice(charset)
+                stdscr.addch(start_y, start_x + rx, rand_ch, color | curses.A_DIM)
+        stdscr.refresh()
+        curses.napms(50)
+        stdscr.clear()
+
+    curses.napms(500)
+    stdscr.refresh()
+
 if __name__ == "__main__":
     audio_data = np.zeros(1024)
+    curses.wrapper(show_bootup)
     curses.wrapper(visualize)
