@@ -1,2 +1,2 @@
-# d e c i b l a s t
+# Deciblast
 A very simple audio spectrum visualiser
