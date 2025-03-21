@@ -3,6 +3,8 @@
 import numpy as np
 import sounddevice as sd
 import curses
+import json
+import os
 
 
 def audio_callback(indata, frames, time, status):
@@ -13,14 +15,28 @@ def audio_callback(indata, frames, time, status):
 
 
 def visualize(stdscr):
-    show_labels = True
-    curses.start_color()
-    curses.use_default_colors()
+    config_file = os.path.expanduser("~/.deciblast.conf")
 
-    curses.init_pair(20, 100, -1)  # Yellow for frame
-    curses.init_pair(21, 231, -1)  # White for label 
-    curses.init_pair(22, 245, -1)  # Dark grey
-  
+    def save_config():
+        config = {
+            "current_frame_color": current_frame_color,
+            "current_spacing": current_spacing,
+            "show_labels": show_labels,
+            "current_gradient": current_gradient,
+            "current_blocks": current_blocks
+        }
+        with open(config_file, 'w') as f:
+            json.dump(config, f)
+
+    def load_config():
+        if os.path.exists(config_file):
+            try:
+                with open(config_file, 'r') as f:
+                    return json.load(f)
+            except Exception:
+                return {}
+        return {}
+
     # Box characters
     h_line = '─'
     v_line = '│'
@@ -28,6 +44,18 @@ def visualize(stdscr):
     tr_corner = '┐'
     bl_corner = '└'
     br_corner = '┘'
+
+    config = load_config()
+    curses.start_color()
+    curses.use_default_colors()
+
+    # Show labels
+    show_labels = config.get("show_labels", True)
+
+    # Frame and label colors
+    frame_colors = [100, 202, 196, 40, 33, 226, 0]
+    curses.init_pair(21, 231, -1)  # White for label
+    curses.init_pair(22, 245, -1)  # Dark grey
 
     # Define gradient sets
     gradient_sets = [
@@ -60,16 +88,21 @@ def visualize(stdscr):
         " ⣠⣤⣶"
     ]
 
-    current_gradient = 3  # Index for gradient selection
-    current_blocks = 0    # Index for block character selection
+    # Bar spacing options
     spacing_options = [0, 1, 2, 3]
-    current_spacing = 0
+
+    current_gradient = config.get("current_gradient", 3)  # Index for gradient selection
+    current_blocks = config.get("current_blocks", 0)    # Index for block character selection
+    current_spacing = config.get("current_spacing", 0)
+    current_frame_color = config.get("current_frame_color", 0)
 
     height, _ = stdscr.getmaxyx()
     num_colors = min(height, len(gradient_sets[current_gradient]))
 
+    # Init color pairs
+    curses.init_pair(20, frame_colors[current_frame_color], -1) # Frame
     for i in range(num_colors):
-        curses.init_pair(i + 1, gradient_sets[current_gradient][i], -1)
+        curses.init_pair(i + 1, gradient_sets[current_gradient][i], -1) # Gradients
 
     curses.curs_set(0)
     stdscr.nodelay(1)
@@ -92,6 +125,7 @@ def visualize(stdscr):
 
         while True:
             height, width = stdscr.getmaxyx()
+
             # Optimized clear using cached positions
             clear_positions = [
                 (y, x)
@@ -100,6 +134,7 @@ def visualize(stdscr):
             ]
             for y, x in clear_positions:
                 stdscr.addch(y, x, ' ')
+
             # Draw outer border box
             for x in range(1, width - 1):
                 try:
@@ -233,14 +268,19 @@ def visualize(stdscr):
             key = stdscr.getch()
             if key == curses.KEY_LEFT:
                 current_gradient = (current_gradient - 1) % len(gradient_sets)
+                save_config()
             elif key == curses.KEY_RIGHT:
                 current_gradient = (current_gradient + 1) % len(gradient_sets)
+                save_config()
             elif key == curses.KEY_UP:
                 current_blocks = (current_blocks - 1) % len(block_sets)
+                save_config()
             elif key == curses.KEY_DOWN:
                 current_blocks = (current_blocks + 1) % len(block_sets)
+                save_config()
             elif key == ord('s'):
                 current_spacing = (current_spacing + 1) % len(spacing_options)
+                save_config()
 
             # Update gradient colors
             num_colors = min(height, len(gradient_sets[current_gradient]))
@@ -252,13 +292,12 @@ def visualize(stdscr):
                 break
             elif key == ord('f'):
                 # Cycle frame color
-                current_frame_colors = [100, 202, 196, 40, 33, 226, 0]
-                if 'frame_color_index' not in locals():
-                    frame_color_index = 0
-                frame_color_index = (frame_color_index + 1) % len(current_frame_colors)
-                curses.init_pair(20, current_frame_colors[frame_color_index], -1)
+                current_frame_color = (current_frame_color + 1) % len(frame_colors)
+                save_config()
+                curses.init_pair(20, frame_colors[current_frame_color], -1)
             elif key == ord('l'):
                 show_labels = not show_labels
+                save_config()
 
 
 def show_bootup(stdscr):
