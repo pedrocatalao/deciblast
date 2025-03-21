@@ -13,6 +13,7 @@ def audio_callback(indata, frames, time, status):
 
 
 def visualize(stdscr):
+    show_labels = True
     curses.start_color()
     curses.use_default_colors()
 
@@ -30,6 +31,9 @@ def visualize(stdscr):
 
     # Define gradient sets
     gradient_sets = [
+        [16, 17, 18, 19, 20, 21, 27, 33, 39],   # Deep blue to cyan
+        [52, 88, 124, 160, 196],               # Red intensity
+        [232, 233, 234, 235, 236, 237],        # Greyscale dark
         [129, 128, 127, 126, 125, 124],  # Magenta
         [57, 56, 55, 54, 53, 52],        # Dark
         [159, 158, 157, 156, 155, 154],  # Lime
@@ -46,15 +50,17 @@ def visualize(stdscr):
     block_sets = [
         " ▁▂▃▄▅▆▇█",
         " ▁▂▃▄▅▆▇",
+        " ▖▗▘▝▚▞▛▜▟▙█",  # Lava effect        
         " ⡀⡄⡆⡇",
         " ⣠⣤⣶⣿",
         " ▏▎▍▌▋▊▉█",
-        " ░▒▓█",
-        " ⠀⠁⠃⠇⠏⠟⠿⡿⣿■",
-        " ■"
+        " ░▒▓",
+        " ⠀⠁⠃⠇⠏⠟⠿",
+        " ■",
+        " ⣠⣤⣶"
     ]
 
-    current_gradient = 0  # Index for gradient selection
+    current_gradient = 3  # Index for gradient selection
     current_blocks = 0    # Index for block character selection
     spacing_options = [0, 1, 2, 3]
     current_spacing = 0
@@ -86,10 +92,14 @@ def visualize(stdscr):
 
         while True:
             height, width = stdscr.getmaxyx()
-            #Clear
-            for y in range(1, height - 1):
-                for x in range(1, width - 1):
-                    stdscr.addch(y, x, ' ')
+            # Optimized clear using cached positions
+            clear_positions = [
+                (y, x)
+                for y in range(1, height - 1)
+                for x in range(1, width - 1)
+            ]
+            for y, x in clear_positions:
+                stdscr.addch(y, x, ' ')
             # Draw outer border box
             for x in range(1, width - 1):
                 try:
@@ -108,38 +118,42 @@ def visualize(stdscr):
                 stdscr.addch(0, width - 1, tr_corner, curses.color_pair(20))
 
                 # Draw top labels
-                top_labels = [f"┤quit├", f"┤spacing├"]
-                spacing_top = width // (len(top_labels) + 1)
-                for idx, label in enumerate(top_labels):
-                    start_x = spacing_top * (idx + 1) - len(label) // 2
-                    for i, ch in enumerate(label):
-                        if 0 < start_x + i < width - 1:
-                            if ch in ['┤', '├']:
-                                color = curses.color_pair(20)
-                            elif ch in ['q', 's'] or ch.isdigit():
-                                color = curses.color_pair(22)
-                            else:
-                                color = curses.color_pair(21)
-                            stdscr.addch(0, start_x + i, ch, color)
+                if show_labels:
+                    top_labels = [f"┤quit├", f"┤spacing├", f"┤frame├", f"┤labels├"]
+                    spacing_top = width // (len(top_labels)+1)
+                    for idx, label in enumerate(top_labels):
+                        start_x = spacing_top * (idx + 1) - len(label) // 2
+                        for i, ch in enumerate(label):
+                            if 0 < start_x + i < width - 1:
+                                if ch in ['┤', '├']:
+                                    color = curses.color_pair(20)
+                                elif i == 1:
+                                    color = curses.color_pair(22)
+                                else:
+                                    color = curses.color_pair(21)
+                                stdscr.addch(0, start_x + i, ch, color)
+
+                # Draw bottom corners
                 stdscr.addch(height - 1, 0, bl_corner, curses.color_pair(20))
                 stdscr.addch(height - 1, width - 1, br_corner, curses.color_pair(20))
             except curses.error:
                 pass
 
             # Draw evenly spaced labels on the bottom border
-            labels = [f"┤< color >├", f"┤↑ style ↓├"]
-            spacing = width // (len(labels) + 1)
-            for idx, label in enumerate(labels):
-                start_x = spacing * (idx + 1) - len(label) // 2
-                for i, ch in enumerate(label):
-                    if 0 < start_x + i < width - 1:
-                        if ch in ['┤', '├']:
-                            color = curses.color_pair(20)
-                        elif ch in ['<', '>', '↑', '↓', 'q']:
-                            color = curses.color_pair(22)
-                        else:
-                            color = curses.color_pair(21)
-                        stdscr.addch(height - 1, start_x + i, ch, color)
+            if show_labels:
+                labels = [f"┤< color >├", f"┤↑ style ↓├"]
+                spacing = width // (len(labels) + 1)
+                for idx, label in enumerate(labels):
+                    start_x = spacing * (idx + 1) - len(label) // 2
+                    for i, ch in enumerate(label):
+                        if 0 < start_x + i < width - 1:
+                            if ch in ['┤', '├']:
+                                color = curses.color_pair(20)
+                            elif ch in ['<', '>', '↑', '↓', 'q']:
+                                color = curses.color_pair(22)
+                            else:
+                                color = curses.color_pair(21)
+                            stdscr.addch(height - 1, start_x + i, ch, color)
 
 
             height, width = stdscr.getmaxyx()
@@ -153,7 +167,7 @@ def visualize(stdscr):
             inner_right = width - 2
 
             bar_spacing = spacing_options[current_spacing]
-            num_bars = max(1, (inner_right - inner_left + 1) // (bar_spacing + 1))
+            num_bars = max(1, ((inner_right - inner_left) + (bar_spacing + 1)) // (bar_spacing + 1))
             if len(bar_heights) != num_bars:
                 bar_heights = np.full(num_bars, 1)
                 max_heights = np.zeros(num_bars)
@@ -236,6 +250,15 @@ def visualize(stdscr):
             stdscr.refresh()
             if key == ord('q'):
                 break
+            elif key == ord('f'):
+                # Cycle frame color
+                current_frame_colors = [100, 202, 196, 40, 33, 226, 0]
+                if 'frame_color_index' not in locals():
+                    frame_color_index = 0
+                frame_color_index = (frame_color_index + 1) % len(current_frame_colors)
+                curses.init_pair(20, current_frame_colors[frame_color_index], -1)
+            elif key == ord('l'):
+                show_labels = not show_labels
 
 if __name__ == "__main__":
     audio_data = np.zeros(1024)
