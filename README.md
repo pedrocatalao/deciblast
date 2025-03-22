@@ -15,6 +15,7 @@ A very simple audio spectrum visualiser made with Python.
 * Current configuration is automatically saved.
 
 ### Preview
+
 * How it looks on a full screen terminal:
 ![preview](docs/deciblast.gif)
 
