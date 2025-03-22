@@ -12,7 +12,7 @@ A very simple audio spectrum visualiser made with Python.
 * Various frame colors.
 * Frame on/off.
 * Labels on/off.
-* Current config is automatically saved and next time it boots, it will look the same.
+* Current configuration is automatically saved.
 
 ### Preview
 * How it looks on a full screen terminal:
