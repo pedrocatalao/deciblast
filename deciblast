@@ -59,9 +59,9 @@ def visualize(stdscr):
 
     # Define gradient sets
     gradient_sets = [
-        [16, 17, 18, 19, 20, 21, 27, 33, 39],   # Deep blue to cyan
+        [18, 19, 20, 21, 27, 33, 39],   # Deep blue to cyan
         [52, 88, 124, 160, 196],               # Red intensity
-        [232, 233, 234, 235, 236, 237],        # Greyscale dark
+        [234, 235, 236, 237, 238, 239],        # Greyscale dark
         [129, 128, 127, 126, 125, 124],  # Magenta
         [57, 56, 55, 54, 53, 52],        # Dark
         [159, 158, 157, 156, 155, 154],  # Lime
