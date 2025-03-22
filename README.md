@@ -15,7 +15,7 @@ A very simple audio spectrum visualiser made with Python.
 * Current config is automatically saved and next time it boots, it will look the same.
 
 How it looks on a full screen terminal:
-![preview](docs/deciblast.gif)
+![preview](docs/deciblast2.gif)
 
 I use it in a pane on my Iterm2 layout like this:
 ![preview](docs/cool-term-layout.gif)
