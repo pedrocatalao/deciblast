@@ -1,6 +1,6 @@
 # Deciblast ![GitHub Repo stars](https://img.shields.io/github/stars/pedrocatalao/deciblast)
 
-A very simple audio spectrum visualiser made with Python.
+A very simple audio spectrum visualiser made with Python for fun.
 
 ### Features
 * Auto adjusts to terminal/pane size.
