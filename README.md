@@ -15,12 +15,11 @@ A very simple audio spectrum visualiser made with Python.
 * Current config is automatically saved and next time it boots, it will look the same.
 
 ### Preview
-How it looks on a full screen terminal:
+* How it looks on a full screen terminal:
 ![preview](docs/deciblast2.gif)
 
-I use it in a pane on my Iterm2 layout like this:
+* I use it in a pane on my Iterm2 layout like this:
 ![preview](docs/cool-term-layout.gif)
 
-Running on cool-retro-term:
-
+* Running on cool-retro-term:
 ![preview](docs/cool-retro-term-2.gif)
