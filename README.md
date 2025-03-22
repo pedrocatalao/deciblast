@@ -4,7 +4,7 @@ A very simple audio spectrum visualiser made with Python.
 
 ### Features
 * Auto adjusts to terminal/pane size.
-* Captures sound from default output, in MacOS only with microphone input (for now).
+* Captures sound from default output, in MacOS only works with microphone input (for now).
 * Audio gain auto adjusts to current ambient noise to keep the bars alive (when in silence it is more sensitive).
 * Various color gradients.
 * Various bar styles.
