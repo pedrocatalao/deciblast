@@ -16,7 +16,7 @@ A very simple audio spectrum visualiser made with Python.
 
 ### Preview
 * How it looks on a full screen terminal:
-![preview](docs/deciblast2.gif)
+![preview](docs/deciblast4.gif)
 
 * I use it in a pane on my Iterm2 layout like this:
 ![preview](docs/cool-term-layout.gif)
