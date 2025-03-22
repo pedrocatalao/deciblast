@@ -17,10 +17,10 @@ A very simple audio spectrum visualiser made with Python.
 ### Preview
 
 * How it looks on a full screen terminal:
-![preview](docs/deciblast.gif)
+![preview](docs/deciblast-demo.gif)
 
 * I use it in a pane on my Iterm2 layout like this:
 ![preview](docs/iterm2-layout.gif)
 
 * Running on cool-retro-term:
-![preview](docs/cool-retro-term.gif)
+![preview](docs/cool-retro-term-example.gif)
