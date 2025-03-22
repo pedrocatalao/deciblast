@@ -22,6 +22,7 @@ def visualize(stdscr):
             "current_frame_color": current_frame_color,
             "current_spacing": current_spacing,
             "show_labels": show_labels,
+            "show_frame": show_frame,
             "current_gradient": current_gradient,
             "current_blocks": current_blocks
         }
@@ -45,56 +46,56 @@ def visualize(stdscr):
     bl_corner = '└'
     br_corner = '┘'
 
-    config = load_config()
     curses.start_color()
     curses.use_default_colors()
 
-    # Show labels
-    show_labels = config.get("show_labels", True)
-
     # Frame and label colors
-    frame_colors = [100, 202, 196, 40, 33, 226, 0]
-    curses.init_pair(21, 231, -1)  # White for label
-    curses.init_pair(22, 245, -1)  # Dark grey
+    frame_colors = [100, 137, 124, 106, 93, 54, 71, 25, 23, 18, -1, 255]
+    curses.init_pair(21, 231, -1)       # White for label
+    curses.init_pair(22, 245, -1)       # Dark grey
 
     # Define gradient sets
     gradient_sets = [
+        [202, 208, 214, 220],           # Orangy
         [18, 19, 20, 21, 27, 33, 39],   # Deep blue to cyan
-        [52, 88, 124, 160, 196],               # Red intensity
-        [234, 235, 236, 237, 238, 239],        # Greyscale dark
-        [129, 128, 127, 126, 125, 124],  # Magenta
-        [57, 56, 55, 54, 53, 52],        # Dark
-        [159, 158, 157, 156, 155, 154],  # Lime
-        [230, 229, 228, 227, 226],       # Yellow
-        [223, 222, 221, 220],            # Darker Yellow
-        [33, 39, 45, 51, 50, 49],        # Blue shades
-        [196, 202, 208, 214, 220, 226],  # Red to yellow
-        [22, 28, 34, 40, 46],            # Forest green
-        [93, 99, 105, 111, 117, 123],    # Cool purple tones
-        [202, 208, 214, 220]             # Darker yellow
+        [52, 88, 124, 160, 196],        # Red intensity
+        [234, 235, 236, 237, 238, 239], # Greyscale dark
+        [129, 128, 127, 126, 125, 124], # Magenta
+        [57, 56, 55, 54, 53, 52],       # Dark
+        [159, 158, 157, 156, 155, 154], # Lime
+        [230, 229, 228, 227, 226],      # Yellow
+        [223, 222, 221, 220],           # Darker Yellow
+        [33, 39, 45, 51, 50, 49],       # Blue shades
+        [196, 202, 208, 214, 220, 226], # Red to yellow
+        [22, 28, 34, 40, 46],           # Forest green
+        [93, 99, 105, 111, 117, 123]   # Cool purple tones
     ]
 
     # Define block character sets
     block_sets = [
         " ▁▂▃▄▅▆▇█",
         " ▁▂▃▄▅▆▇",
-        " ▖▗▘▝▚▞▛▜▟▙█",  # Lava effect        
-        " ⡀⡄⡆⡇",
-        " ⣠⣤⣶⣿",
+        " ▖▗▘▝▚▞▛▜▟▙█", # Lava effect
         " ▏▎▍▌▋▊▉█",
-        " ░▒▓",
-        " ⠀⠁⠃⠇⠏⠟⠿",
         " ■",
-        " ⣠⣤⣶"
+        " ░▒▓",
+        " ⣠⣤⣶⣿",
+        " ⣠⣤⣶",
+        " ⠀⠁⠃⠇⠏⠟⠿",
+        " ⡀⡄⡆⡇"
     ]
 
     # Bar spacing options
     spacing_options = [0, 1, 2, 3]
 
-    current_gradient = config.get("current_gradient", 3)  # Index for gradient selection
-    current_blocks = config.get("current_blocks", 0)    # Index for block character selection
+    # Load stored configuration
+    config = load_config()
+    current_gradient = config.get("current_gradient", 0)    # Index for gradient selection
+    current_blocks = config.get("current_blocks", 0)        # Index for block character selection
     current_spacing = config.get("current_spacing", 0)
     current_frame_color = config.get("current_frame_color", 0)
+    show_labels = config.get("show_labels", True)
+    show_frame = config.get("show_frame", True)
 
     height, _ = stdscr.getmaxyx()
     num_colors = min(height, len(gradient_sets[current_gradient]))
@@ -136,43 +137,46 @@ def visualize(stdscr):
                 stdscr.addch(y, x, ' ')
 
             # Draw outer border box
-            for x in range(1, width - 1):
+            if not show_frame:
+                stdscr.clear()
+            else:
+                for x in range(1, width - 1):
+                    try:
+                        stdscr.addch(0, x, h_line, curses.color_pair(20))
+                        stdscr.addch(height - 1, x, h_line, curses.color_pair(20))
+                    except curses.error:
+                        pass
+                for y in range(1, height - 1):
+                    try:
+                        stdscr.addch(y, 0, v_line, curses.color_pair(20))
+                        stdscr.addch(y, width - 1, v_line, curses.color_pair(20))
+                    except curses.error:
+                        pass
                 try:
-                    stdscr.addch(0, x, h_line, curses.color_pair(20))
-                    stdscr.addch(height - 1, x, h_line, curses.color_pair(20))
+                    stdscr.addch(0, 0, tl_corner, curses.color_pair(20))
+                    stdscr.addch(0, width - 1, tr_corner, curses.color_pair(20))
+                    stdscr.addch(height - 1, 0, bl_corner, curses.color_pair(20))
+                    stdscr.addch(height - 1, width - 1, br_corner, curses.color_pair(20))
                 except curses.error:
                     pass
-            for y in range(1, height - 1):
-                try:
-                    stdscr.addch(y, 0, v_line, curses.color_pair(20))
-                    stdscr.addch(y, width - 1, v_line, curses.color_pair(20))
-                except curses.error:
-                    pass
-            try:
-                stdscr.addch(0, 0, tl_corner, curses.color_pair(20))
-                stdscr.addch(0, width - 1, tr_corner, curses.color_pair(20))
 
-                # Draw top labels
-                if show_labels:
-                    top_labels = [f"┤quit├", f"┤spacing├", f"┤frame├", f"┤labels├"]
-                    spacing_top = width // (len(top_labels)+1)
-                    for idx, label in enumerate(top_labels):
-                        start_x = spacing_top * (idx + 1) - len(label) // 2
-                        for i, ch in enumerate(label):
-                            if 0 < start_x + i < width - 1:
-                                if ch in ['┤', '├']:
-                                    color = curses.color_pair(20)
-                                elif i == 1:
-                                    color = curses.color_pair(22)
-                                else:
-                                    color = curses.color_pair(21)
-                                stdscr.addch(0, start_x + i, ch, color)
-
-                # Draw bottom corners
-                stdscr.addch(height - 1, 0, bl_corner, curses.color_pair(20))
-                stdscr.addch(height - 1, width - 1, br_corner, curses.color_pair(20))
-            except curses.error:
-                pass
+            # Draw evenly spaced labels on the top border
+            if show_labels:
+                top_labels = [f"┤quit├", f"┤spacing├", f"┤frame├", f"┤labels├"]
+                spacing_top = width // (len(top_labels)+1)
+                for idx, label in enumerate(top_labels):
+                    start_x = spacing_top * (idx + 1) - len(label) // 2
+                    for i, ch in enumerate(label):
+                        if 0 < start_x + i < width - 1:
+                            if ch in ['┤', '├']:
+                                if not show_frame:
+                                    continue
+                                color = curses.color_pair(20)
+                            elif i == 1:
+                                color = curses.color_pair(22)
+                            else:
+                                color = curses.color_pair(21)
+                            stdscr.addch(0, start_x + i, ch, color)
 
             # Draw evenly spaced labels on the bottom border
             if show_labels:
@@ -183,13 +187,14 @@ def visualize(stdscr):
                     for i, ch in enumerate(label):
                         if 0 < start_x + i < width - 1:
                             if ch in ['┤', '├']:
+                                if not show_frame:
+                                    continue
                                 color = curses.color_pair(20)
                             elif ch in ['<', '>', '↑', '↓', 'q']:
                                 color = curses.color_pair(22)
                             else:
                                 color = curses.color_pair(21)
                             stdscr.addch(height - 1, start_x + i, ch, color)
-
 
             height, width = stdscr.getmaxyx()
             block_chars = block_sets[current_blocks]
@@ -293,6 +298,11 @@ def visualize(stdscr):
             elif key == ord('f'):
                 # Cycle frame color
                 current_frame_color = (current_frame_color + 1) % len(frame_colors)
+                if current_frame_color == len(frame_colors) - 1:
+                    show_frame = False
+                    stdscr.clear()
+                else:
+                    show_frame = True
                 save_config()
                 curses.init_pair(20, frame_colors[current_frame_color], -1)
             elif key == ord('l'):
