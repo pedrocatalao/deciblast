@@ -23,4 +23,4 @@ A very simple audio spectrum visualiser made with Python for fun.
 ![preview](docs/iterm2-layout.gif)
 
 * Running on cool-retro-term:
-![preview](docs/cool-retro-term-example-5.gif)
+![preview](docs/cool-retro-term-example-6.gif)
