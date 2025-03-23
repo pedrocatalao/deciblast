@@ -6,7 +6,6 @@ import curses
 import json
 import os
 
-
 def audio_callback(indata, frames, time, status):
     if status:
         print(status, flush=True)
@@ -37,6 +36,18 @@ def visualize(stdscr):
             except Exception:
                 return {}
         return {}
+
+    def clear_frame():
+        stdscr.move(0, 0)
+        stdscr.clrtoeol()
+
+        stdscr.move(height - 1, 0)
+        stdscr.clrtoeol()
+
+        # Clear left and right columns
+        for y in range(1, height - 1):
+            stdscr.addch(y, 0, ' ')               # Left edge
+            stdscr.addch(y, width - 1, ' ')       # Right edge
 
     # Box characters
     h_line = '─'
@@ -137,9 +148,7 @@ def visualize(stdscr):
                 stdscr.addch(y, x, ' ')
 
             # Draw outer border box
-            if not show_frame:
-                stdscr.clear()
-            else:
+            if show_frame:
                 for x in range(1, width - 1):
                     try:
                         stdscr.addch(0, x, h_line, curses.color_pair(20))
@@ -300,7 +309,7 @@ def visualize(stdscr):
                 current_frame_color = (current_frame_color + 1) % len(frame_colors)
                 if current_frame_color == len(frame_colors) - 1:
                     show_frame = False
-                    stdscr.clear()
+                    clear_frame()
                 else:
                     show_frame = True
                 save_config()
@@ -309,7 +318,7 @@ def visualize(stdscr):
                 show_labels = not show_labels
                 save_config()
 
-
+# Boot animation
 def show_bootup(stdscr):
     import random
     curses.start_color()
