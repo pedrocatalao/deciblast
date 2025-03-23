@@ -316,6 +316,7 @@ def visualize(stdscr):
                 curses.init_pair(20, frame_colors[current_frame_color], -1)
             elif key == ord('l'):
                 show_labels = not show_labels
+                clear_frame()
                 save_config()
 
 # Boot animation
@@ -332,7 +333,7 @@ def show_bootup(stdscr):
     for i, color in enumerate(gradient):
         curses.init_pair(i + 1, color, -1)
 
-    logo_text = "○⃝ d e c i b l a s t"
+    logo_text = "〢 d e c i b l a s t"
 
     charset = '▖▗▘▝▚▞▛▜▟▙█'
     height, width = stdscr.getmaxyx()
