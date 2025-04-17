@@ -49,6 +49,13 @@ def visualize(stdscr):
             stdscr.addch(y, 0, ' ')               # Left edge
             stdscr.addch(y, width - 1, ' ')       # Right edge
 
+    # Update gradient colors
+    def update_gradient():
+        num_colors = min(height, len(gradient_sets[current_gradient]))
+        for i in range(num_colors):
+            curses.init_pair(i + 1, gradient_sets[current_gradient][i], -1)
+        stdscr.refresh()
+
     # Box characters
     h_line = '─'
     v_line = '│'
@@ -109,16 +116,14 @@ def visualize(stdscr):
     show_frame = config.get("show_frame", True)
 
     height, _ = stdscr.getmaxyx()
-    num_colors = min(height, len(gradient_sets[current_gradient]))
 
     # Init color pairs
-    curses.init_pair(20, frame_colors[current_frame_color], -1) # Frame
-    for i in range(num_colors):
-        curses.init_pair(i + 1, gradient_sets[current_gradient][i], -1) # Gradients
+    update_gradient()
 
     curses.curs_set(0)
     stdscr.nodelay(1)
     stdscr.timeout(50)
+    curses.mousemask(curses.ALL_MOUSE_EVENTS | curses.REPORT_MOUSE_POSITION)
 
     global audio_data
     samplerate = 44100
@@ -137,6 +142,7 @@ def visualize(stdscr):
 
         while True:
             height, width = stdscr.getmaxyx()
+            num_colors = min(height, len(gradient_sets[current_gradient]))
 
             # Optimized clear using cached positions
             clear_positions = [
@@ -280,11 +286,33 @@ def visualize(stdscr):
 
             # Handle user input for gradient, character set, and spacing switching
             key = stdscr.getch()
-            if key == curses.KEY_LEFT:
+
+            if key == curses.KEY_MOUSE:
+                try:
+                    _, mx, my, _, mouse_event, = curses.getmouse()
+                    if mouse_event & curses.BUTTON4_PRESSED:  # Scroll up
+                        current_blocks = (current_blocks - 1) % len(block_sets)
+                        save_config()
+                    elif mouse_event & 0x8000000:  # Scroll down
+                        current_blocks = (current_blocks + 1) % len(block_sets)
+                        save_config()
+                    elif mouse_event & 0x1000:  # Scroll right
+                        current_gradient = (current_gradient + 1) % len(gradient_sets)
+                        update_gradient()
+                        save_config()
+                    elif mouse_event & 0x2000:  # Scroll left
+                        current_gradient = (current_gradient - 1) % len(gradient_sets)
+                        update_gradient()
+                        save_config()
+                except curses.error:
+                    pass
+            elif key == curses.KEY_LEFT:
                 current_gradient = (current_gradient - 1) % len(gradient_sets)
+                update_gradient()
                 save_config()
             elif key == curses.KEY_RIGHT:
                 current_gradient = (current_gradient + 1) % len(gradient_sets)
+                update_gradient()
                 save_config()
             elif key == curses.KEY_UP:
                 current_blocks = (current_blocks - 1) % len(block_sets)
@@ -295,14 +323,7 @@ def visualize(stdscr):
             elif key == ord('s'):
                 current_spacing = (current_spacing + 1) % len(spacing_options)
                 save_config()
-
-            # Update gradient colors
-            num_colors = min(height, len(gradient_sets[current_gradient]))
-            for i in range(num_colors):
-                curses.init_pair(i + 1, gradient_sets[current_gradient][i], -1)
-
-            stdscr.refresh()
-            if key == ord('q'):
+            elif key == ord('q'):
                 break
             elif key == ord('f'):
                 # Cycle frame color
