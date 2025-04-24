@@ -6,6 +6,11 @@ import curses
 import json
 import os
 
+GRAPH_COLOR_PAIR = 250
+FRAME_COLOR_PAIR = 251
+LABEL_COLOR_PAIR = 252
+SHORTCUT_COLOR_PAIR = 253
+
 def audio_callback(indata, frames, time, status):
     if status:
         print(status, flush=True)
@@ -51,10 +56,26 @@ def visualize(stdscr):
 
     # Update gradient colors
     def update_gradient():
-        num_colors = min(height, len(gradient_sets[current_gradient]))
-        for i in range(num_colors):
-            curses.init_pair(i + 1, gradient_sets[current_gradient][i], -1)
+        colors = init_gradient_colors(gradient_sets[current_gradient][0])
+        for i, color in enumerate(colors):
+            curses.init_pair(i + 1, color, -1)
         stdscr.refresh()
+
+    def init_gradient_colors(base_color):
+        color_ids = []
+        base_color = gradient_sets[current_gradient]
+        base_r, base_g, base_b = base_color
+        for i in range(height - 2):
+            factor = 1.0 - (i / (height - 3)) * 0.9  # darken to 50%
+            r = int(base_r * factor)
+            g = int(base_g * factor)
+            b = int(base_b * factor)
+
+            color_id = 1 + len(color_ids)
+            curses.init_color(color_id, r, g, b)
+            color_ids.append(color_id)
+
+        return color_ids
 
     # Box characters
     h_line = '─'
@@ -67,26 +88,15 @@ def visualize(stdscr):
     curses.start_color()
     curses.use_default_colors()
 
-    # Frame and label colors
-    frame_colors = [100, 137, 124, 106, 93, 54, 71, 25, 23, 18, -1, 255]
-    curses.init_pair(21, 231, -1)       # White for label
-    curses.init_pair(22, 245, -1)       # Dark grey
-
     # Define gradient sets
     gradient_sets = [
-        [202, 208, 214, 220],           # Orangy
-        [18, 19, 20, 21, 27, 33, 39],   # Deep blue to cyan
-        [52, 88, 124, 160, 196],        # Red intensity
-        [234, 235, 236, 237, 238, 239], # Greyscale dark
-        [129, 128, 127, 126, 125, 124], # Magenta
-        [57, 56, 55, 54, 53, 52],       # Dark
-        [159, 158, 157, 156, 155, 154], # Lime
-        [230, 229, 228, 227, 226],      # Yellow
-        [223, 222, 221, 220],           # Darker Yellow
-        [33, 39, 45, 51, 50, 49],       # Blue shades
-        [196, 202, 208, 214, 220, 226], # Red to yellow
-        [22, 28, 34, 40, 46],           # Forest green
-        [93, 99, 105, 111, 117, 123]   # Cool purple tones
+        (900, 40, 40),
+        (1000, 322, 40),
+        (900, 600, 111),
+        (100, 800, 222),
+        (50, 800, 1000),
+        (111, 111, 1000),
+        (660, 222, 999),
     ]
 
     # Define block character sets
@@ -115,6 +125,12 @@ def visualize(stdscr):
     show_labels = config.get("show_labels", True)
     show_frame = config.get("show_frame", True)
 
+    # Frame and label colors
+    frame_colors = [100, 137, 124, 106, 93, 54, 71, 25, 23, 18, -1, 255]
+    curses.init_pair(LABEL_COLOR_PAIR, 231, -1)       # White for label
+    curses.init_pair(SHORTCUT_COLOR_PAIR, 245, -1)       # Dark grey
+    curses.init_pair(FRAME_COLOR_PAIR, frame_colors[current_frame_color], -1)
+
     height, _ = stdscr.getmaxyx()
 
     # Init color pairs
@@ -142,7 +158,7 @@ def visualize(stdscr):
 
         while True:
             height, width = stdscr.getmaxyx()
-            num_colors = min(height, len(gradient_sets[current_gradient]))
+            num_colors = height - 2
 
             # Optimized clear using cached positions
             clear_positions = [
@@ -157,21 +173,21 @@ def visualize(stdscr):
             if show_frame:
                 for x in range(1, width - 1):
                     try:
-                        stdscr.addch(0, x, h_line, curses.color_pair(20))
-                        stdscr.addch(height - 1, x, h_line, curses.color_pair(20))
+                        stdscr.addch(0, x, h_line, curses.color_pair(FRAME_COLOR_PAIR))
+                        stdscr.addch(height - 1, x, h_line, curses.color_pair(FRAME_COLOR_PAIR))
                     except curses.error:
                         pass
                 for y in range(1, height - 1):
                     try:
-                        stdscr.addch(y, 0, v_line, curses.color_pair(20))
-                        stdscr.addch(y, width - 1, v_line, curses.color_pair(20))
+                        stdscr.addch(y, 0, v_line, curses.color_pair(FRAME_COLOR_PAIR))
+                        stdscr.addch(y, width - 1, v_line, curses.color_pair(FRAME_COLOR_PAIR))
                     except curses.error:
                         pass
                 try:
-                    stdscr.addch(0, 0, tl_corner, curses.color_pair(20))
-                    stdscr.addch(0, width - 1, tr_corner, curses.color_pair(20))
-                    stdscr.addch(height - 1, 0, bl_corner, curses.color_pair(20))
-                    stdscr.addch(height - 1, width - 1, br_corner, curses.color_pair(20))
+                    stdscr.addch(0, 0, tl_corner, curses.color_pair(FRAME_COLOR_PAIR))
+                    stdscr.addch(0, width - 1, tr_corner, curses.color_pair(FRAME_COLOR_PAIR))
+                    stdscr.addch(height - 1, 0, bl_corner, curses.color_pair(FRAME_COLOR_PAIR))
+                    stdscr.addch(height - 1, width - 1, br_corner, curses.color_pair(FRAME_COLOR_PAIR))
                 except curses.error:
                     pass
 
@@ -186,11 +202,11 @@ def visualize(stdscr):
                             if ch in ['┤', '├']:
                                 if not show_frame:
                                     continue
-                                color = curses.color_pair(20)
+                                color = curses.color_pair(FRAME_COLOR_PAIR)
                             elif i == 1:
-                                color = curses.color_pair(22)
+                                color = curses.color_pair(SHORTCUT_COLOR_PAIR)
                             else:
-                                color = curses.color_pair(21)
+                                color = curses.color_pair(LABEL_COLOR_PAIR)
                             stdscr.addch(0, start_x + i, ch, color)
 
             # Draw evenly spaced labels on the bottom border
@@ -204,11 +220,11 @@ def visualize(stdscr):
                             if ch in ['┤', '├']:
                                 if not show_frame:
                                     continue
-                                color = curses.color_pair(20)
+                                color = curses.color_pair(FRAME_COLOR_PAIR)
                             elif ch in ['<', '>', '↑', '↓', 'q']:
-                                color = curses.color_pair(22)
+                                color = curses.color_pair(SHORTCUT_COLOR_PAIR)
                             else:
-                                color = curses.color_pair(21)
+                                color = curses.color_pair(LABEL_COLOR_PAIR)
                             stdscr.addch(height - 1, start_x + i, ch, color)
 
             height, width = stdscr.getmaxyx()
@@ -298,21 +314,21 @@ def visualize(stdscr):
                         save_config()
                     elif mouse_event & 0x1000:  # Scroll right
                         current_gradient = (current_gradient + 1) % len(gradient_sets)
-                        update_gradient()
+                        init_gradient_colors(gradient_sets[current_gradient][0])
                         save_config()
                     elif mouse_event & 0x2000:  # Scroll left
                         current_gradient = (current_gradient - 1) % len(gradient_sets)
-                        update_gradient()
+                        init_gradient_colors(gradient_sets[current_gradient][0])
                         save_config()
                 except curses.error:
                     pass
             elif key == curses.KEY_LEFT:
                 current_gradient = (current_gradient - 1) % len(gradient_sets)
-                update_gradient()
+                init_gradient_colors(gradient_sets[current_gradient][0])
                 save_config()
             elif key == curses.KEY_RIGHT:
                 current_gradient = (current_gradient + 1) % len(gradient_sets)
-                update_gradient()
+                init_gradient_colors(gradient_sets[current_gradient][0])
                 save_config()
             elif key == curses.KEY_UP:
                 current_blocks = (current_blocks - 1) % len(block_sets)
@@ -324,6 +340,7 @@ def visualize(stdscr):
                 current_spacing = (current_spacing + 1) % len(spacing_options)
                 save_config()
             elif key == ord('q'):
+                os.system("tput reset")
                 break
             elif key == ord('f'):
                 # Cycle frame color
@@ -334,7 +351,7 @@ def visualize(stdscr):
                 else:
                     show_frame = True
                 save_config()
-                curses.init_pair(20, frame_colors[current_frame_color], -1)
+                curses.init_pair(FRAME_COLOR_PAIR, frame_colors[current_frame_color], -1)
             elif key == ord('l'):
                 show_labels = not show_labels
                 clear_frame()
