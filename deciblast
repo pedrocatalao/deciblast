@@ -58,17 +58,16 @@ def visualize(stdscr):
 
     # Init gradient colors
     def init_graph_color_pairs():
-        colors = init_gradient_colors(gradient_sets[current_gradient][0])
+        colors = init_gradient_colors()
         for i, color in enumerate(colors):
             curses.init_pair(i + 1, color, -1)
         stdscr.refresh()
 
-    def init_gradient_colors(base_color):
+    def init_gradient_colors():
         color_ids = []
-        base_color = gradient_sets[current_gradient]
-        base_r, base_g, base_b = base_color
+        base_r, base_g, base_b = gradient_sets[current_gradient]
         for i in range(height - 2):
-            factor = 1.0 - (i / (height - 3)) * 0.9  # darken to 50%
+            factor = 1.0 - (i / (height - 3)) * 0.7  # darken to 50%
             r = int(base_r * factor)
             g = int(base_g * factor)
             b = int(base_b * factor)
@@ -164,6 +163,7 @@ def visualize(stdscr):
             if (height, width) != prev_size:
                 border_needs_redraw = True
                 labels_need_redraw = True
+                init_graph_color_pairs()
                 prev_size = (height, width)
 
             # Optimized clear using cached positions
@@ -320,21 +320,21 @@ def visualize(stdscr):
                         save_config()
                     elif mouse_event & 0x1000:  # Scroll right
                         current_gradient = (current_gradient + 1) % len(gradient_sets)
-                        init_gradient_colors(gradient_sets[current_gradient][0])
+                        init_gradient_colors()
                         save_config()
                     elif mouse_event & 0x2000:  # Scroll left
                         current_gradient = (current_gradient - 1) % len(gradient_sets)
-                        init_gradient_colors(gradient_sets[current_gradient][0])
+                        init_gradient_colors()
                         save_config()
                 except curses.error:
                     pass
             elif key == curses.KEY_LEFT:
                 current_gradient = (current_gradient - 1) % len(gradient_sets)
-                init_gradient_colors(gradient_sets[current_gradient][0])
+                init_gradient_colors()
                 save_config()
             elif key == curses.KEY_RIGHT:
                 current_gradient = (current_gradient + 1) % len(gradient_sets)
-                init_gradient_colors(gradient_sets[current_gradient][0])
+                init_gradient_colors()
                 save_config()
             elif key == curses.KEY_UP:
                 current_blocks = (current_blocks - 1) % len(block_sets)
