@@ -19,6 +19,9 @@ def audio_callback(indata, frames, time, status):
 
 
 def visualize(stdscr):
+    border_needs_redraw = True
+    labels_need_redraw = True
+    prev_size = (-1, -1)
     config_file = os.path.expanduser("~/.deciblast.conf")
 
     def save_config():
@@ -90,7 +93,7 @@ def visualize(stdscr):
 
     # Define gradient sets
     gradient_sets = [
-        (900, 40, 40),
+        (800, 20, 20),
         (1000, 322, 40),
         (900, 600, 111),
         (100, 800, 222),
@@ -159,6 +162,10 @@ def visualize(stdscr):
         while True:
             height, width = stdscr.getmaxyx()
             num_colors = height - 2
+            if (height, width) != prev_size:
+                border_needs_redraw = True
+                labels_need_redraw = True
+                prev_size = (height, width)
 
             # Optimized clear using cached positions
             clear_positions = [
@@ -170,7 +177,7 @@ def visualize(stdscr):
                 stdscr.addch(y, x, ' ')
 
             # Draw outer border box
-            if show_frame:
+            if show_frame and border_needs_redraw:
                 for x in range(1, width - 1):
                     try:
                         stdscr.addch(0, x, h_line, curses.color_pair(FRAME_COLOR_PAIR))
@@ -192,7 +199,7 @@ def visualize(stdscr):
                     pass
 
             # Draw evenly spaced labels on the top border
-            if show_labels:
+            if show_labels and labels_need_redraw:
                 top_labels = [f"┤quit├", f"┤spacing├", f"┤frame├", f"┤labels├"]
                 spacing_top = width // (len(top_labels)+1)
                 for idx, label in enumerate(top_labels):
@@ -210,7 +217,7 @@ def visualize(stdscr):
                             stdscr.addch(0, start_x + i, ch, color)
 
             # Draw evenly spaced labels on the bottom border
-            if show_labels:
+            if show_labels and labels_need_redraw:
                 labels = [f"┤< color >├", f"┤↑ style ↓├"]
                 spacing = width // (len(labels) + 1)
                 for idx, label in enumerate(labels):
@@ -343,17 +350,18 @@ def visualize(stdscr):
                 os.system("tput reset")
                 break
             elif key == ord('f'):
-                # Cycle frame color
                 current_frame_color = (current_frame_color + 1) % len(frame_colors)
                 if current_frame_color == len(frame_colors) - 1:
                     show_frame = False
                     clear_frame()
                 else:
                     show_frame = True
+                    border_needs_redraw = True
+                    curses.init_pair(FRAME_COLOR_PAIR, frame_colors[current_frame_color], -1)
                 save_config()
-                curses.init_pair(FRAME_COLOR_PAIR, frame_colors[current_frame_color], -1)
             elif key == ord('l'):
                 show_labels = not show_labels
+                labels_need_redraw = True
                 clear_frame()
                 save_config()
 
