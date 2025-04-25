@@ -17,7 +17,6 @@ def audio_callback(indata, frames, time, status):
     global audio_data
     audio_data = np.copy(indata[:, 0])
 
-
 def visualize(stdscr):
     border_needs_redraw = True
     labels_need_redraw = True
@@ -57,8 +56,8 @@ def visualize(stdscr):
             stdscr.addch(y, 0, ' ')               # Left edge
             stdscr.addch(y, width - 1, ' ')       # Right edge
 
-    # Update gradient colors
-    def update_gradient():
+    # Init gradient colors
+    def init_graph_color_pairs():
         colors = init_gradient_colors(gradient_sets[current_gradient][0])
         for i, color in enumerate(colors):
             curses.init_pair(i + 1, color, -1)
@@ -129,7 +128,7 @@ def visualize(stdscr):
     show_frame = config.get("show_frame", True)
 
     # Frame and label colors
-    frame_colors = [100, 137, 124, 106, 93, 54, 71, 25, 23, 18, -1, 255]
+    frame_colors = [1, 100, 137, 124, 106, 93, 54, 71, 25, 23, 18, -1, 255]
     curses.init_pair(LABEL_COLOR_PAIR, 231, -1)       # White for label
     curses.init_pair(SHORTCUT_COLOR_PAIR, 245, -1)       # Dark grey
     curses.init_pair(FRAME_COLOR_PAIR, frame_colors[current_frame_color], -1)
@@ -137,7 +136,7 @@ def visualize(stdscr):
     height, _ = stdscr.getmaxyx()
 
     # Init color pairs
-    update_gradient()
+    init_graph_color_pairs()
 
     curses.curs_set(0)
     stdscr.nodelay(1)
